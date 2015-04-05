@@ -3,7 +3,7 @@
     "capabilities": [
         ""
     ],
-    "companyName": "carlospa87@gmail.com",
+    "companyName": "carlosperate",
     "longName": "PebbleQuickHue",
     "projectType": "native",
     "resources": {
@@ -19,7 +19,7 @@
     "shortName": "PebbleQuickHue",
     "uuid": "6f267899-b108-4380-97aa-66baf4a345a1",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "0.1",
     "watchapp": {
         "watchface": false
     }
