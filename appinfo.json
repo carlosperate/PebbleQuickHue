@@ -1,0 +1,26 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "carlospa87@gmail.com",
+    "longName": "PebbleQuickHue",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/lightbulb.png",
+                "name": "LIGHTBULB",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "2",
+    "shortName": "PebbleQuickHue",
+    "uuid": "6f267899-b108-4380-97aa-66baf4a345a1",
+    "versionCode": 1,
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
