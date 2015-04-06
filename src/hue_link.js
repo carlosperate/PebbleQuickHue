@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Javascript (runs on phone) to trigger Hue light operations
+* PebbleKit JS (runs on phone) code to trigger Hue light operations.
 *
 * Copyright (c) 2015 carlosperate https://github.com/carlosperate/
 * Licensed under The MIT License (MIT), a copy can be found in the LICENSE file.
@@ -7,27 +7,67 @@
 
 // This variables are to be changed by the developer to fit their settings
 // In the near future the phone settings will allow to edit this data 
-var HUE_BRIDGE_IP = "192.168.0.10";
-var HUE_BRIDGE_USER = "31ef239e77af967203e11b21f5b878b";
+var HUE_BRIDGE_IP = "";
+var HUE_BRIDGE_USER = "";
 var HUE_LIGHT_ID = "4";
 var lightUrl = "http://" + HUE_BRIDGE_IP + "/api/" + HUE_BRIDGE_USER +
                "/lights/" + HUE_LIGHT_ID;
 
+
 /*******************************************************************************
 * AppMessage functions
 *******************************************************************************/
+/**
+ * On ready state we want to toggle the light inmediatly.
+ */
 Pebble.addEventListener("ready", function(e) {
-    console.log('PebbleKit JS ready!');
+    //console.log('PebbleKit JS ready!');
     toggleLightState();
 });
 
 /**
- * Listener for AppMessage received
+ * Listener for AppMessage received.
  */
 Pebble.addEventListener("appmessage", function(e) {
-    console.log("AppMessage received!");
-    toggleLightState();
+    console.log("AppMessage received! " + JSON.stringify(e.payload));
+    for (var key in e.payload){
+        if (key == "KEY_LIGHT_STATE") {
+            toggleLightState();
+        } else if (key == "KEY_BRIGHTNESS") {
+            setLightBrightness(e.payload.KEY_BRIGHTNESS);
+        } else {
+            console.log("Unrecognised AppMessage key received in JS!");
+        }
+    }
 });
+
+/**
+ * Sends and AppMessage with the ON/OFF state of the light.
+ */
+function appMessageSendLightState(on_state) {
+    // No boolean type defined, so need to send a 0/1 value
+    var state;
+    if (on_state === true) {
+        state = 1;
+    } else {
+        state = 0;
+    }
+    // Assemble dictionary and send
+    var dictionary = {
+        "KEY_LIGHT_STATE": state,
+    };
+    Pebble.sendAppMessage(dictionary,logReturnedData, logReturnedData);
+}
+
+/**
+ * Sends and AppMessage with the ON/OFF state of the light.
+ */
+function appMessageSendLightBrightness(level) {
+    var dictionary = {
+        "KEY_BRIGHTNESS": level,
+    };
+    Pebble.sendAppMessage(dictionary,logReturnedData, logReturnedData);
+}
 
 
 /*******************************************************************************
@@ -56,28 +96,46 @@ function turnLightOff() {
     ajaxRequest(lightUrl + "/state", "PUT", "{\"on\": false}", turnLightCallback);
 }
 
+/**
+ * This callback checks the successfulness of the operation and sends the state
+ * back to the pebble app.
+ */
 function turnLightCallback(jsdonDataBack) {
     if (jsdonDataBack !== null) {
         var parsedJson = JSON.parse(jsdonDataBack);
         var lightKey = "/lights/" + HUE_LIGHT_ID + "/state/on";
         if (parsedJson[0].success !== undefined) {
-            var state;
-            console.log(lightKey + " = " + parsedJson[0].success[lightKey]);
-            if (parsedJson[0].success[lightKey] === true) {
-                state = 1;
-            } else {
-                state = 0;
-            }
-            // Send an AppMessage packet to the phone indicating the light will be on
-            // Assemble dictionary using app keys
-            var dictionary = {
-                "KEY_LIGHT_STATE": state,
-            };
-            Pebble.sendAppMessage(dictionary,logReturnedData, logReturnedData);
+            //console.log(lightKey + " = " + parsedJson[0].success[lightKey]);
+            appMessageSendLightState(parsedJson[0].success[lightKey]);
         } else {
             // Do nothing in case of error, user can try again
+            console.log("Error in turn light callback: " + 
+                        JSON.stringify(jsdonDataBack));
         }
     } 
+}
+
+function setLightBrightness(level) {
+    var setLightBrightnessCallback = function (jsdonDataBack) {
+        if (jsdonDataBack !== null) {
+            var parsedJson = JSON.parse(jsdonDataBack);
+            var lightKey = "/lights/" + HUE_LIGHT_ID + "/state/on";
+            if (parsedJson[0].success !== undefined) {
+                appMessageSendLightBrightness(parsedJson[0].success[lightKey]);
+            } else {
+                // Do nothing in case of error, user can try again
+                console.log("Error in set brightness callback: " + 
+                        JSON.stringify(jsdonDataBack));
+            }
+        } 
+    };
+
+    // Convert the 0-99 level to 0-254ish
+    level = Math.round(level * 2.56);
+    
+    // Send the ON command to the hue bridge
+    ajaxRequest(lightUrl + "/state", "PUT", "{\"bri\": " + level + "}",
+                setLightBrightnessCallback);
 }
 
 

@@ -24,7 +24,6 @@ void outbox_sent_callback(DictionaryIterator *iterator, void *context);
 void outbox_failed_callback(
         DictionaryIterator *iterator, AppMessageResult reason, void *context);
 void toggle_light_state();
-void increase_brightness();
-void decrease_brightness();
+void set_brightness(char level);
 
 #endif  // HUE_CONTROL_H_

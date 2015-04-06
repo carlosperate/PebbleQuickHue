@@ -1,5 +1,6 @@
 {
     "appKeys": {
+        "KEY_BRIGHTNESS": 1,
         "KEY_LIGHT_STATE": 0
     },
     "capabilities": [

@@ -19,6 +19,6 @@
 * Public function definitions
 *******************************************************************************/
 void gui_light_state(bool on_state);
-
+void gui_brightness_level(signed char level);
 
 #endif  // MAIN_H_

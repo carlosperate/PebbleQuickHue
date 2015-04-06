@@ -7,25 +7,8 @@
 *******************************************************************************/
 enum {
     KEY_LIGHT_STATE = 0,
+    KEY_BRIGHTNESS = 1,
 };
-
-
-struct lightbulb_t {
-    bool on;
-    unsigned char brightness;
-};
-
-
-/*******************************************************************************
-* Private globals
-*******************************************************************************/
-// None.
-
-
-/*******************************************************************************
-* Private function definitions
-*******************************************************************************/
-// None.
 
 
 /*******************************************************************************
@@ -77,19 +60,23 @@ void toggle_light_state() {
 
     // Add a key-value pair
     int key = KEY_LIGHT_STATE;
-    unsigned char value = 0;  // Value ignored, going to toggle
-    dict_write_int(iterator, key, &value, sizeof(char), false /* signed */);
+    char value = 0;  // Value ignored, going to toggle
+    dict_write_int(iterator, key, &value, sizeof(char), true /* signed */);
 
     // Send the message!
     app_message_outbox_send();
 }
 
 
-void increase_brightness() {
-    
-}
+void set_brightness(char level) {
+    // Prepare dictionary
+    DictionaryIterator *iterator;
+    app_message_outbox_begin(&iterator);
 
+    // Add a key-value pair
+    int key = KEY_BRIGHTNESS;
+    dict_write_int(iterator, key, &level, sizeof(char), true /* signed */);
 
-void decrease_brightness() {
-    
+    // Send the message!
+    app_message_outbox_send();
 }
