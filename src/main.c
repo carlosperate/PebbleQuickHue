@@ -1,4 +1,6 @@
 #include <pebble.h>
+#include "main.h"
+#include "hue_control.h"
 
 
 /*******************************************************************************
@@ -13,26 +15,38 @@ static BitmapLayer *lightbulb_bitmap_layer;
 /*******************************************************************************
 * Function definitions
 *******************************************************************************/
+static void init(void);
+static void window_load(Window *window);
+static void window_unload(Window *window);
+static void deinit(void);
 static void select_click_handler(ClickRecognizerRef recognizer, void *context);
 static void up_click_handler(ClickRecognizerRef recognizer, void *context);
 static void down_click_handler(ClickRecognizerRef recognizer, void *context);
 static void click_config_provider(void *context);
-static void window_load(Window *window);
-static void window_unload(Window *window);
-static void deinit(void);
 
 
 /*******************************************************************************
 * Life cycle functions
 *******************************************************************************/
 static void init(void) {
+    // Window
     window = window_create();
     window_set_click_config_provider(window, click_config_provider);
     window_set_window_handlers(window, (WindowHandlers) {
         .load = window_load,
         .unload = window_unload,
      });
-     window_stack_push(window, true);
+    window_stack_push(window, true);
+
+    // Register AppMessage handlers
+    app_message_register_inbox_received(inbox_received_callback);
+    app_message_register_inbox_dropped(inbox_dropped_callback);
+    app_message_register_outbox_failed(outbox_failed_callback);
+    app_message_register_outbox_sent(outbox_sent_callback);
+    
+    // Open AppMessage
+    app_message_open(app_message_inbox_size_maximum(),
+                     app_message_outbox_size_maximum());
 }
 
 
@@ -63,6 +77,8 @@ static void window_load(Window *window) {
 
 static void window_unload(Window *window) {
     text_layer_destroy(title_text_layer);
+    gbitmap_destroy(lightbulb_bitmap);
+    bitmap_layer_destroy(lightbulb_bitmap_layer);
 }
 
 
@@ -75,7 +91,7 @@ static void deinit(void) {
 * Click handler functions
 *******************************************************************************/
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-    text_layer_set_text(title_text_layer, "Light ON/OFF (Select Pressed");
+    toggle_light_state();
 }
 
 
@@ -93,6 +109,20 @@ static void click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
     window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
     window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+}
+
+
+/*******************************************************************************
+* GUI update functions
+*******************************************************************************/
+void gui_light_state(bool on_state) {
+    if (on_state == true) {
+        text_layer_set_text(title_text_layer, "Light ON");
+        // In a future update the image will change to show a bright light bulb
+    } else {
+        text_layer_set_text(title_text_layer, "Light OFF");
+        // In a future update the image will change to show a dimm light bulb
+    }
 }
 
 

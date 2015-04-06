@@ -1,5 +1,7 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "KEY_LIGHT_STATE": 0
+    },
     "capabilities": [
         ""
     ],
@@ -8,6 +10,16 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/action_icon_minus.png",
+                "name": "ACTION_ICON_MINUS",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/action_icon_plus.png",
+                "name": "ACTION_ICON_PLUS",
+                "type": "png-trans"
+            },
             {
                 "file": "images/lightbulb.png",
                 "name": "LIGHTBULB",
