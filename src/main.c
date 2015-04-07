@@ -2,6 +2,14 @@
 #include "main.h"
 #include "hue_control.h"
 
+/*******************************************************************************
+* Defines
+*******************************************************************************/
+// Used for the brightness text to show an OFF message and not change value
+#define LIGHT_OFF    -1
+#define MIN_BRIGHTNESS    1
+#define MAX_BRIGHTNESS    99
+
 
 /*******************************************************************************
 * Local globals
@@ -15,7 +23,7 @@ static GBitmap *lightbulb_bitmap;
 static GBitmap *icon_plus;
 static GBitmap *icon_minus;
 
-static unsigned char brightness_level = 0;
+static int8_t brightness_level = LIGHT_OFF;
 
 
 /*******************************************************************************
@@ -30,6 +38,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context);
 static void down_click_handler(ClickRecognizerRef recognizer, void *context);
 static void click_config_provider(void *context);
 static void gui_update_brightness();
+
 
 /*******************************************************************************
 * Life cycle functions
@@ -51,7 +60,7 @@ static void init(void) {
     app_message_register_outbox_sent(outbox_sent_callback);
     
     // Open AppMessage
-    // TODO: Once appmessage code is finish determine maximum size required
+    // TODO: Once AppMessage code is finish determine maximum size required
     app_message_open(app_message_inbox_size_maximum(),
                      app_message_outbox_size_maximum());
 }
@@ -62,8 +71,10 @@ static void window_load(Window *window) {
     GRect bounds = layer_get_bounds(window_layer);
     
     // First set up the side bar to recalculate width left
-    icon_plus = gbitmap_create_with_resource(RESOURCE_ID_ACTION_ICON_PLUS_WHITE);
-    icon_minus = gbitmap_create_with_resource(RESOURCE_ID_ACTION_ICON_MINUS_WHITE);
+    icon_plus = gbitmap_create_with_resource(
+            RESOURCE_ID_ACTION_ICON_PLUS_WHITE);
+    icon_minus = gbitmap_create_with_resource(
+            RESOURCE_ID_ACTION_ICON_MINUS_WHITE);
     side_bar = action_bar_layer_create();
     action_bar_layer_add_to_window(side_bar, window);
     action_bar_layer_set_click_config_provider(side_bar, click_config_provider);
@@ -98,7 +109,7 @@ static void window_load(Window *window) {
     // Set up the image layer
     lightbulb_bitmap = gbitmap_create_with_resource(RESOURCE_ID_LIGHTBULB);
     lightbulb_bitmap_layer = bitmap_layer_create((GRect) {
-        .origin = { ((width - 68) / 2), 32 },
+        .origin = { ((width - 68) / 2), 30 },
         .size = { 68, 120 }
     });
     bitmap_layer_set_bitmap(lightbulb_bitmap_layer, lightbulb_bitmap);
@@ -124,25 +135,44 @@ static void deinit(void) {
 
 
 /*******************************************************************************
-* Tick / Click handler functions
+* Click handler functions
 *******************************************************************************/
+/**
+ * Select button requests the light to be toggled.
+ */
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
     toggle_light_state();
 }
 
 
+/**
+ * Up button increments the brightness level in the GUI and request the same 
+ * level to the hue bridge.
+ * Not implemented with click_number_of_clicks_counted due of choppiness.
+ */
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-    if (brightness_level < 99) {
+    if ((brightness_level != LIGHT_OFF)) {
         brightness_level++;
+        if (brightness_level > MAX_BRIGHTNESS) {
+            brightness_level = MAX_BRIGHTNESS;
+        }
         gui_update_brightness();
         set_brightness(brightness_level);
     }
 }
 
 
+/**
+ * Down button decrements the brightness level in the GUI and request the same 
+ * level to the hue bridge.
+ * Not implemented with click_number_of_clicks_counted due of choppiness.
+ */
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-    if (brightness_level > 0) {
+    if ((brightness_level != LIGHT_OFF)) {
         brightness_level--;
+        if (brightness_level < MIN_BRIGHTNESS) {
+            brightness_level = MIN_BRIGHTNESS;
+        }
         gui_update_brightness();
         set_brightness(brightness_level);
     }
@@ -151,21 +181,11 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void click_config_provider(void *context) {
     window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-    // Set up the repeating click for UP and DOWN with 50ms interval
-    window_single_repeating_click_subscribe(BUTTON_ID_UP, 50, up_click_handler);
+    // Set up the repeating click for UP and DOWN with 200 ms interval
     window_single_repeating_click_subscribe(
-            BUTTON_ID_DOWN, 50, down_click_handler);
-}
-
-void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  //Allocate long-lived storage (required by TextLayer)
-  //static char buffer[] = "00:00";
-  
-  //Write the time to the buffer in a safe manner
-  //strftime(buffer, sizeof("00:00"), "%H:%M", tick_time);
-  
-  //Set the TextLayer to display the buffer
-  //text_layer_set_text(g_text_layer, buffer);
+            BUTTON_ID_UP, 100, up_click_handler);
+    window_single_repeating_click_subscribe(
+            BUTTON_ID_DOWN, 100, down_click_handler);
 }
 
 
@@ -175,14 +195,19 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 void gui_light_state(bool on_state) {
     if (on_state == true) {
         text_layer_set_text(title_text_layer, "Light ON");
+        // Set brightness back to editable, upcoming AppMessage will set value
+        brightness_level = 0;
         // In a future update the image will change to show a bright light bulb
     } else {
         text_layer_set_text(title_text_layer, "Light OFF");
-        // In a future update the image will change to show a dimm light bulb
+        // Set the brightness level editable again
+        brightness_level = LIGHT_OFF;
+        gui_update_brightness();
+        // In a future update the image will change to show a dim light bulb
     }
 }
 
-void gui_brightness_level(signed char level) {
+void gui_brightness_level(int8_t level) {
     if ((level>=0) && (level<100)) {
         brightness_level = level;
         gui_update_brightness();
@@ -191,9 +216,14 @@ void gui_brightness_level(signed char level) {
 
 static void gui_update_brightness() {
     // Set a static buffer for this permanent text
-    static char brightness_text[4];
-    snprintf(brightness_text, sizeof(brightness_text), "%u", brightness_level);
-    text_layer_set_text(brightness_text_layer, brightness_text);
+    static char brightness_text[3];
+    if (brightness_level == LIGHT_OFF) {
+        text_layer_set_text(brightness_text_layer, "NA");
+    } else {
+        snprintf(brightness_text, sizeof(brightness_text), "%u",
+                 brightness_level);
+        text_layer_set_text(brightness_text_layer, brightness_text);
+    }
 }
 
 
