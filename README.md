@@ -4,7 +4,7 @@ Pebble app to facilitate quick control of a Philips Hue light bulb.
 It will toggle the preselected light ON or OFF as soon as the app loads, so it is designed to be registered as a button shortcut for quick light control. Up and down buttons will also change the brightness of the light.
 
 ![PebbleQuickHue screenshot 1](https://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_1.png)
-![PebbleQuickHue screenshot 2](https://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_1.png)
+![PebbleQuickHue screenshot 2](https://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_2.png)
 
 
 ## Using PebbleQuickHue with your Philips Hue bridge
