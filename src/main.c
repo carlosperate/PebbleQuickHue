@@ -1,13 +1,15 @@
 #include <pebble.h>
+#include <pebble_fonts.h>
 #include "main.h"
 #include "hue_control.h"
+
 
 /*******************************************************************************
 * Defines
 *******************************************************************************/
-// Used for the brightness text to show an OFF message and not change value
-#define LIGHT_OFF    -1
-#define MIN_BRIGHTNESS    1
+// Used for the brightness text
+#define LIGHT_OFF         -1
+#define MIN_BRIGHTNESS     1
 #define MAX_BRIGHTNESS    99
 
 
@@ -43,16 +45,7 @@ static void gui_update_brightness();
 /*******************************************************************************
 * Life cycle functions
 *******************************************************************************/
-static void init(void) {
-    // Window
-    window = window_create();
-    window_set_click_config_provider(window, click_config_provider);
-    window_set_window_handlers(window, (WindowHandlers) {
-        .load = window_load,
-        .unload = window_unload,
-     });
-    window_stack_push(window, true);
-
+static void init(void) {   
     // Register AppMessage handlers
     app_message_register_inbox_received(inbox_received_callback);
     app_message_register_inbox_dropped(inbox_dropped_callback);
@@ -63,6 +56,15 @@ static void init(void) {
     // TODO: Once AppMessage code is finish determine maximum size required
     app_message_open(app_message_inbox_size_maximum(),
                      app_message_outbox_size_maximum());
+
+    // Window
+    window = window_create();
+    window_set_click_config_provider(window, click_config_provider);
+    window_set_window_handlers(window, (WindowHandlers) {
+        .load = window_load,
+        .unload = window_unload,
+     });
+    window_stack_push(window, true);
 }
 
 
@@ -91,7 +93,7 @@ static void window_load(Window *window) {
     });
     text_layer_set_font(
         title_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-    text_layer_set_text(title_text_layer, "Light ON/OFF");
+    text_layer_set_text(title_text_layer, "Edit Settings");
     text_layer_set_text_alignment(title_text_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(title_text_layer));
     
@@ -207,12 +209,14 @@ void gui_light_state(bool on_state) {
     }
 }
 
+
 void gui_brightness_level(int8_t level) {
     if ((level>=0) && (level<100)) {
         brightness_level = level;
         gui_update_brightness();
     }
 }
+
 
 static void gui_update_brightness() {
     // Set a static buffer for this permanent text

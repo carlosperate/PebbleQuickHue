@@ -1,10 +1,13 @@
 {
     "appKeys": {
+        "KEY_BRIDGE_IP": 2,
+        "KEY_BRIDGE_REQUEST": 4,
+        "KEY_BRIDGE_USER": 3,
         "KEY_BRIGHTNESS": 1,
         "KEY_LIGHT_STATE": 0
     },
     "capabilities": [
-        ""
+        "configurable"
     ],
     "companyName": "carlosperate",
     "longName": "PebbleQuickHue",
@@ -12,9 +15,9 @@
     "resources": {
         "media": [
             {
-                "file": "images/action_icon_minus.png",
-                "name": "ACTION_ICON_MINUS",
-                "type": "png-trans"
+                "file": "images/lightbulb.png",
+                "name": "LIGHTBULB",
+                "type": "png"
             },
             {
                 "file": "images/action_icon_plus.png",
@@ -22,9 +25,9 @@
                 "type": "png-trans"
             },
             {
-                "file": "images/lightbulb.png",
-                "name": "LIGHTBULB",
-                "type": "png"
+                "file": "images/action_icon_minus.png",
+                "name": "ACTION_ICON_MINUS",
+                "type": "png-trans"
             }
         ]
     },
