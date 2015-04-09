@@ -7,6 +7,7 @@
 /*******************************************************************************
 * Defines
 *******************************************************************************/
+#define LIGHT_STATE_ERROR -1
 // Used for the brightness text
 #define LIGHT_OFF         -1
 #define MIN_BRIGHTNESS     1
@@ -93,6 +94,9 @@ static void window_load(Window *window) {
     });
     text_layer_set_font(
         title_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    // This default text will be quickly overwritten by the light state. If
+    // the bridge settings were never set (virgin installation) no data will 
+    // come back and this text will still be displayed to alert the user.
     text_layer_set_text(title_text_layer, "Edit Settings");
     text_layer_set_text_alignment(title_text_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(title_text_layer));
@@ -150,7 +154,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 /**
  * Up button increments the brightness level in the GUI and request the same 
  * level to the hue bridge.
- * Not implemented with click_number_of_clicks_counted due of choppiness.
+ * Not implemented with click_number_of_clicks_counted due to count speed.
  */
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
     if ((brightness_level != LIGHT_OFF)) {
@@ -167,7 +171,7 @@ static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
 /**
  * Down button decrements the brightness level in the GUI and request the same 
  * level to the hue bridge.
- * Not implemented with click_number_of_clicks_counted due of choppiness.
+ * Not implemented with click_number_of_clicks_counted due to count speed.
  */
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     if ((brightness_level != LIGHT_OFF)) {
@@ -194,18 +198,36 @@ static void click_config_provider(void *context) {
 /*******************************************************************************
 * GUI update functions
 *******************************************************************************/
-void gui_light_state(bool on_state) {
-    if (on_state == true) {
-        text_layer_set_text(title_text_layer, "Light ON");
-        // Set brightness back to editable, upcoming AppMessage will set value
-        brightness_level = 0;
-        // In a future update the image will change to show a bright light bulb
-    } else {
-        text_layer_set_text(title_text_layer, "Light OFF");
-        // Set the brightness level editable again
-        brightness_level = LIGHT_OFF;
-        gui_update_brightness();
-        // In a future update the image will change to show a dim light bulb
+void gui_light_state(light_t on_state) {
+    switch (on_state) {
+        case LIGHT_STATE_ON:
+            text_layer_set_text(title_text_layer, "Light ON");
+            // Brightness back to editable, upcoming AppMessage will set value
+            brightness_level = 0;
+            // Future update the image will change to show a bright light bulb
+            break;
+        case LIGHT_STATE_OFF:
+            text_layer_set_text(title_text_layer, "Light OFF");
+            // Set the brightness level uneditable
+            brightness_level = LIGHT_OFF;
+            gui_update_brightness();
+            // Future update the image will change to show a dim light bulb 
+            break;
+        case LIGHT_STATE_POWER_OFF:
+            // Inform the user the light switch is OFF
+            text_layer_set_text(title_text_layer, "Power OFF");
+            brightness_level = LIGHT_OFF;
+        break;
+        case LIGHT_STATE_ERROR:
+            // No bridge contact, most likely incorrect settings  
+            text_layer_set_text(title_text_layer, "Edit Settings");
+            brightness_level = LIGHT_OFF;
+        default:
+            text_layer_set_text(title_text_layer, "Read ERROR");
+            brightness_level = LIGHT_OFF;
+            APP_LOG(APP_LOG_LEVEL_ERROR, "Unexpected Light state %d",
+                    on_state);
+            break;
     }
 }
 

@@ -14,12 +14,13 @@
 * Includes
 *******************************************************************************/
 #include <pebble.h>
+#include "hue_control.h"
 
 
 /*******************************************************************************
 * Public function definitions
 *******************************************************************************/
-void gui_light_state(bool on_state);
+void gui_light_state(light_t on_state);
 void gui_brightness_level(int8_t level);
 
 #endif  // MAIN_H_

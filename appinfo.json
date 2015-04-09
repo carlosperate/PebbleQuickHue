@@ -1,10 +1,11 @@
 {
     "appKeys": {
         "KEY_BRIDGE_IP": 2,
-        "KEY_BRIDGE_REQUEST": 4,
         "KEY_BRIDGE_USER": 3,
         "KEY_BRIGHTNESS": 1,
-        "KEY_LIGHT_STATE": 0
+        "KEY_LIGHT_ID": 4,
+        "KEY_LIGHT_STATE": 0,
+        "KEY_SETT_REQUEST": 5
     },
     "capabilities": [
         "configurable"
