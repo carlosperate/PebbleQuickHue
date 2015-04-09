@@ -12,21 +12,33 @@
             background-color: #eeeeee;
         }
         h5 {
-          padding: 10px 10px 25px 10px;
+          padding: 10px 10px 15px 10px;
         }
         nav .brand-logo {
             font-size: 1.8rem;
         }
-        .parallax-container {
+        .header-image-container {
+            position: relative;
+            overflow: hidden;
             height: 200px;
         }
-        .parallax-container img {
+        .header-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+        }
+        .header-image img {
             max-width: 100%;
-            max-width: 100%;
+            min-width: 100%;
             min-height: 100%;
             display: block;
-            top: 0px; 
+            top: 0px;
             bottom: inherit;
+            position: absolute;
+            -webkit-transform: translate3d(0, 0, 0);
         }
         .container {
             margin-top: -100px;
@@ -59,37 +71,42 @@
     </nav>
 
     <!-- Header image -->
-    <div class="parallax-container">
-        <div class="parallax"><img src="header_background_1.jpg"></div>
+    <div class="header-image-container">
+        <div class="header-image"><img src="header_background_1.jpg"></div>
     </div>
 
     <!-- Content  -->
     <div class="container">
         <div class="row">
             <div class="col s12 white z-depth-1">
-                <h5> Hue Bridge<br>Configuration settings</h5>
+                <h5> Hue Bridge<br>Configuration Settings</h5>
                 <form class="col s12" id="config_form">
                     <div class="row">
                         <div class="input-field col s12">
                             <i class="mdi-action-settings-ethernet prefix"></i>
-                            <input id="hue_ip" name="hue_ip" type="tel" class="validate" placeholder="192.168.0.X">
-                            <label for="hue_ip">Hue Bridge IP</label>
+                            <input id="HUE_BRIDGE_IP" name="HUE_BRIDGE_IP" type="tel" class="validate" placeholder="192.168.0.X">
+                            <label for="HUE_BRIDGE_IP">Hue Bridge IP</label>
                         </div>
-                        <div class="input-field col s12">&nbsp;</div>
                         <div class="input-field col s12">
                             <i class="mdi-action-account-circle prefix"></i>
-                            <input id="hue_user" name="hue_user" type="text" class="validate" placeholder="">
-                            <label for="hue_user">Hue Bridge User</label>
+                            <input id="HUE_BRIDGE_USER" name="HUE_BRIDGE_USER" type="text" class="validate" placeholder="">
+                            <label for="HUE_BRIDGE_USER">Hue Bridge User</label>
                         </div>
-                        <div class="col s12 right-align">
-                            &nbsp;<br>&nbsp;<br>
-                            <button class="btn waves-effect waves-light grey" type="submit" id="cancel_button">Cancel
-                            </button>
-                            <button class="btn waves-effect waves-light purple" type="submit" id="submit_button">Submit
-                            </button>
+                        <div class="input-field col s12">
+                            <i class="mdi-image-wb-incandescent prefix"></i>
+                            <input id="HUE_LIGHT_ID" name="HUE_LIGHT_ID" type="tel" class="validate" placeholder="">
+                            <label for="HUE_LIGHT_ID">Hue Light ID number</label>
                         </div>
                     </div>
                 </form>
+                <div class="row">
+                    <div class="col s12 right-align">
+                        <button class="btn waves-effect waves-light grey" id="cancel_button">Cancel
+                        </button>
+                        <button class="btn waves-effect waves-light purple" id="submit_button">Submit
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -100,18 +117,28 @@
 
     <!-- Javascript to submit the settings into the PebbleJS kit -->
     <script>
+        // Converts all the form data into a JSON string
         function jsonifyForm() {
             var jsonForm = JSON.stringify($("#config_form").serializeArray());
             console.log(jsonForm);
             return jsonForm;
         }
         $().ready(function() {
+            // Prepare the button click listeners
             $("#cancel_button").click(function() {
+                console.log("Cancel");
                 document.location = "pebblejs://close";
             });
             $("#submit_button").click(function() {
+                console.log("Submit");
                 document.location = "pebblejs://close#" + encodeURIComponent(jsonifyForm());
             });
+
+            // Load the pre-filled data from PebbleKit JS
+            var jsonFormData = jQuery.parseJSON(decodeURIComponent(window.location.search.substring(1)));
+            for(key in jsonFormData) {
+                $("#"+[key]).val(jsonFormData[key]);
+            }
         });
     </script>
 </body>
