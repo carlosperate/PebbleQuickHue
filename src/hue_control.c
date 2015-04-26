@@ -78,9 +78,9 @@ void inbox_received_callback(DictionaryIterator *iterator, void *context) {
                         case KEY_SETT_REQUEST:  // Expected, already dealt with
                             break;
                         default:
-                            //APP_LOG(APP_LOG_LEVEL_ERROR,
-                            //        "Key %d supplied with KEY_SETT_REQUEST error!",
-                            //        (int)t->key);
+                            APP_LOG(APP_LOG_LEVEL_ERROR,
+                                    "Key %d supplied with KEY_SETT_REQUEST error!",
+                                    (int)t->key);
                         break;
                     }
                     t = dict_read_next(iterator);
@@ -278,9 +278,9 @@ static char * get_stored_bridge_ip() {
 
 /**
  * Retrieves the Hue Bridge developer username from the pebble storage.
- * @return Char pointer to the IP address in string format. This pointer can be
- *         null if there was a memory allocation error, or if the username data
- *         has never been saved before.
+ * @return Char pointer to the bridge username in string format. This pointer
+ *         can be null if there was a memory allocation error, or if the
+ *         username data has never been saved before.
  */
 static char * get_stored_bridge_username() {
     // Currently PERSIST_DATA_MAX_LENGTH is 256, to future proof 16bit var

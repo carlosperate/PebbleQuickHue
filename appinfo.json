@@ -16,9 +16,15 @@
     "resources": {
         "media": [
             {
-                "file": "images/lightbulb.png",
-                "name": "LIGHTBULB",
+                "file": "images/icon.png",
+                "menuIcon": true,
+                "name": "MENU_ICON",
                 "type": "png"
+            },
+            {
+                "file": "images/action_icon_minus.png",
+                "name": "ACTION_ICON_MINUS",
+                "type": "png-trans"
             },
             {
                 "file": "images/action_icon_plus.png",
@@ -26,9 +32,9 @@
                 "type": "png-trans"
             },
             {
-                "file": "images/action_icon_minus.png",
-                "name": "ACTION_ICON_MINUS",
-                "type": "png-trans"
+                "file": "images/lightbulb.png",
+                "name": "LIGHTBULB",
+                "type": "png"
             }
         ]
     },
