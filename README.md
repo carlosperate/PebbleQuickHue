@@ -34,6 +34,6 @@ More information about creating a user can be found in the
 [3]: https://github.com/carlosperate/PebbleQuickHue/releases/download/v0.1/QuickHue.pbw
 [4]: http://www.developers.meethue.com/documentation/getting-started
 
-[screenshot_1]: http://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_1.png
-[screenshot_2]: http://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_2.png
-[screenshot_3]: http://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_config_1_small.png
+[screenshot_1]: https://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_1.png
+[screenshot_2]: https://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_2.png
+[screenshot_3]: https://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_config_1_small.png
