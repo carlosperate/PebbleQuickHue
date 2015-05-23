@@ -20,6 +20,7 @@ $RECYCLE.BIN/
 npp.session
 gen/
 local.properties
+*.cppcheck
 
 ##########
 # Python #

@@ -1,16 +1,16 @@
 # QuickHue for Pebble
 Pebble app to facilitate quick control of a Philips Hue light bulb.
 
-Pebble app to facilitate quick control of a Philips Hue light bulb.
+### [Link to QuickHue in the Pebble App Store][1]
 
-It will toggle the preselected light ON or OFF as soon as the app loads, so it is designed to be registered as a button shortcut ([Quick Launch Pebble feature][1]) for quick light control. The Up and down buttons within the app will also change the brightness of the light.
+The Pebble App will toggle the preselected light ON or OFF as soon as it loads, so it is designed to be registered as a button shortcut ([Quick Launch Pebble feature][2]) for quick light control. The up and down buttons when the app is open will change the brightness of the light.
 
 ![QuickHue for Pebble screenshot 1][screenshot_1]
 ![QuickHue for Pebble screenshot 2][screenshot_2]
 
 
 ## Installing QuickHue
-This app can be installed from the Pebble App store: [QuickHue for Pebble][2]
+This app can be installed from the Pebble App store: [QuickHue for Pebble][1]
 
 The latest, not for production, app version from the GitHub repository can be installed by [clicking this link on your phone][3]. The Pebble phone app should be able to catch the `.pbw` file and install it in your Pebble smarthwatch. 
 
@@ -29,9 +29,9 @@ More information about creating a user can be found in the
 <sub>This project and its developer/s are in no way affiliated with Koninklijke Philips N.V.</sub>
 
 
-[1]: http://help.getpebble.com/customer/portal/articles/1407457-firmware-release-notes#2.6
-[2]: https://apps.getpebble.com/applications/5526f89e1c36ea04bd00006b
-[3]: https://github.com/carlosperate/PebbleQuickHue/raw/master/bin/QuickHue.pbw
+[1]: https://apps.getpebble.com/applications/5526f89e1c36ea04bd00006b
+[2]: http://help.getpebble.com/customer/portal/articles/1407457-firmware-release-notes#2.6
+[3]: https://github.com/carlosperate/PebbleQuickHue/releases/download/v0.1/QuickHue.pbw
 [4]: http://www.developers.meethue.com/documentation/getting-started
 
 [screenshot_1]: http://raw.githubusercontent.com/carlosperate/PebbleQuickHue/master/screenshots/screenshot_1.png
