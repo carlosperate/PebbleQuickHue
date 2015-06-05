@@ -1,3 +1,9 @@
+/*******************************************************************************
+* Code file for the main entry point.
+*
+* Copyright (c) 2015 carlosperate https://github.com/carlosperate/
+* Licensed under The MIT License (MIT), a copy can be found in the LICENSE file.
+*******************************************************************************/
 #include <pebble.h>
 #include <pebble_fonts.h>
 #include "main.h"
@@ -46,13 +52,13 @@ static void gui_update_brightness();
 /*******************************************************************************
 * Life cycle functions
 *******************************************************************************/
-static void init(void) {   
+static void init(void) {
     // Register AppMessage handlers
     app_message_register_inbox_received(inbox_received_callback);
     app_message_register_inbox_dropped(inbox_dropped_callback);
     app_message_register_outbox_failed(outbox_failed_callback);
     app_message_register_outbox_sent(outbox_sent_callback);
-    
+
     // Open AppMessage
     // TODO: Once AppMessage code is finish determine maximum size required
     app_message_open(app_message_inbox_size_maximum(),
@@ -72,7 +78,7 @@ static void init(void) {
 static void window_load(Window *window) {
     Layer *window_layer = window_get_root_layer(window);
     GRect bounds = layer_get_bounds(window_layer);
-    
+
     // First set up the side bar to recalculate width left
     icon_plus = gbitmap_create_with_resource(
             RESOURCE_ID_ACTION_ICON_PLUS_WHITE);
@@ -86,7 +92,7 @@ static void window_load(Window *window) {
     action_bar_layer_set_icon(side_bar, BUTTON_ID_DOWN, icon_minus);
 
     int width = bounds.size.w - ACTION_BAR_WIDTH;
-    
+
     // Set up the title text layer
     title_text_layer = text_layer_create((GRect) {
         .origin = { 0, 0 },
@@ -100,7 +106,7 @@ static void window_load(Window *window) {
     text_layer_set_text(title_text_layer, "Edit Settings");
     text_layer_set_text_alignment(title_text_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(title_text_layer));
-    
+
     // Set up the brightness text layer
     brightness_text_layer = text_layer_create((GRect) {
         .origin = { width, ((bounds.size.h/2) - 12)  },

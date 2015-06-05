@@ -1,3 +1,9 @@
+/*******************************************************************************
+* Code file for Hue Control
+*
+* Copyright (c) 2015 carlosperate https://github.com/carlosperate/
+* Licensed under The MIT License (MIT), a copy can be found in the LICENSE file.
+*******************************************************************************/
 #include <string.h>
 #include "hue_control.h"
 #include "main.h"
@@ -45,7 +51,7 @@ static int8_t get_stored_light_id();
 *******************************************************************************/
 void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     int8_t level = 0;
-    
+
     // 1st we are going to check for the presence of KEY_SETT_REQUEST. This is
     // a special case, this key can be sent with an operation retry request
     // (only two options designed), and the program response is different:
@@ -94,7 +100,7 @@ void inbox_received_callback(DictionaryIterator *iterator, void *context) {
             t = dict_read_next(iterator);
         }
     }
-    
+
     // Back to the first item and go through the keys as normal
     t = dict_read_first(iterator);
     while (t != NULL) {
@@ -283,10 +289,10 @@ static char * get_stored_bridge_ip() {
  *         username data has never been saved before.
  */
 static char * get_stored_bridge_username() {
-    // Currently PERSIST_DATA_MAX_LENGTH is 256, to future proof 16bit var
+    // Currently PERSIST_DATA_MAX_LENGTH is 256, to future proof use 16bit var
     int16_t username_len = STORAGE_USER_LENGTH;
     char *bridge_username = (char *)malloc(sizeof(char) * username_len);
-    
+
     if (bridge_username == NULL) {
         // Maybe we were being a bit too greedy, try smaller before giving up
         username_len = 120;
@@ -304,17 +310,17 @@ static char * get_stored_bridge_username() {
         free(bridge_username);
         APP_LOG(APP_LOG_LEVEL_INFO, "Bridge dev username not found in Pebble");
         return NULL;
-    } 
+    }
 
     // bridge_username is rather large, so let's reduce it
     char * bridge_shortname = malloc(sizeof(char) * (buffer_len + 1));
     if (bridge_shortname == NULL) {
         // Well, I guess we'll have to keep this large memory block
-         return bridge_username;
+        return bridge_username;
     }
     strncpy(bridge_shortname, bridge_username, buffer_len);
     free(bridge_username);
-    
+
     return bridge_shortname;
 }
 
@@ -400,7 +406,7 @@ void set_brightness(int8_t level) {
             APP_LOG(APP_LOG_LEVEL_ERROR, "Set brightness message error! %s",
                     translate_error(result));
         }
-    } 
+    }
 }
 
 
@@ -412,13 +418,13 @@ void send_bridge_settings() {
     char *ip = get_stored_bridge_ip();
     char *username = get_stored_bridge_username();
     int8_t light_id = get_stored_light_id();
-    
+
     // Only send the data if it was retrieved
     if ((ip != NULL) && (username != NULL) && (light_id != LIGHT_ID_ERROR)) {
         //APP_LOG(APP_LOG_LEVEL_INFO, "Ip to send %s", ip);
         //APP_LOG(APP_LOG_LEVEL_INFO, "User to send %s", username);
         //APP_LOG(APP_LOG_LEVEL_INFO, "Light ID to send %d", light_id);
-        
+
         // Prepare dictionary, Add key-value pairs and send it
         DictionaryIterator *iterator;
         app_message_outbox_begin(&iterator);
@@ -429,7 +435,7 @@ void send_bridge_settings() {
         if (result != APP_MSG_OK) {
             APP_LOG(APP_LOG_LEVEL_ERROR, "Bridge settings message error! %s",
                     translate_error(result));
-        } 
+        }
     }
 
     if (ip       != NULL) free(ip);

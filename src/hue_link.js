@@ -10,7 +10,7 @@
 var OPTIONS = {
     "HUE_BRIDGE_IP": "",
     "HUE_BRIDGE_USER": "",
-    "HUE_LIGHT_ID": 0      // There is no ID 0 in the Hue system
+    "HUE_LIGHT_ID": 0      // Conveniently, there is no ID 0 in the Hue system
 };
 
 
@@ -27,8 +27,8 @@ Pebble.addEventListener("ready", function(e) {
 * PebbleKit App Configuration functions
 *******************************************************************************/
 Pebble.addEventListener("showConfiguration", function(e) {
-    Pebble.openURL("http://carlosperate.github.io/PebbleQuickHue/config/index.html?" + 
-                   encodeURIComponent(JSON.stringify(OPTIONS)));
+    Pebble.openURL("http://carlosperate.github.io/PebbleQuickHue/config/" +
+                   "index.html?" + encodeURIComponent(JSON.stringify(OPTIONS)));
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
