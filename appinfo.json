@@ -38,7 +38,8 @@
             }
         ]
     },
-    "sdkVersion": "2",
+    "sdkVersion": "3",
+    "targetPlatforms": ["aplite", "basalt"],
     "shortName": "QuickHue",
     "uuid": "6f267899-b108-4380-97aa-66baf4a345a1",
     "versionCode": 1,

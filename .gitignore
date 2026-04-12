@@ -1,3 +1,9 @@
+####################
+# Project specific #
+####################
+ignore/
+build/
+
 ######################
 # OS generated files #
 ######################
@@ -28,8 +34,3 @@ local.properties
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-
-####################
-# Project specific #
-####################
-/ignore

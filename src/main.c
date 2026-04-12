@@ -5,7 +5,6 @@
 * Licensed under The MIT License (MIT), a copy can be found in the LICENSE file.
 *******************************************************************************/
 #include <pebble.h>
-#include <pebble_fonts.h>
 #include "main.h"
 #include "hue_control.h"
 
@@ -223,11 +222,12 @@ void gui_light_state(light_t on_state) {
             // Inform the user the light switch is OFF
             text_layer_set_text(title_text_layer, "Power OFF");
             brightness_level = LIGHT_OFF;
-        break;
+            break;
         case LIGHT_STATE_ERROR:
-            // No bridge contact, most likely incorrect settings  
+            // No bridge contact, most likely incorrect settings
             text_layer_set_text(title_text_layer, "Edit Settings");
             brightness_level = LIGHT_OFF;
+            break;
         default:
             text_layer_set_text(title_text_layer, "Read ERROR");
             brightness_level = LIGHT_OFF;
