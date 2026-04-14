@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <!-- Compiled and minified Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.96.1/css/materialize.min.css">
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>QuickHue Configuration</title>
+    <style media="screen" type="text/css">
+        body {
+            background-color: #eeeeee;
+        }
+        h5 {
+            padding: 10px 10px 0px 10px;
+        }
+        nav .brand-logo {
+            font-size: 1.8rem;
+        }
+        .header-image-container {
+            position: relative;
+            overflow: hidden;
+            height: 200px;
+        }
+        .header-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+        }
+        .header-image img {
+            max-width: 100%;
+            min-width: 100%;
+            min-height: 100%;
+            display: block;
+            top: 0px;
+            bottom: inherit;
+            position: absolute;
+            -webkit-transform: translate3d(0, 0, 0);
+        }
+        .container {
+            margin-top: -100px;
+        }
+        /* Forms colours */
+        .input-field .prefix.active,
+        .input-field input[type=text]:focus + label,
+        .input-field input[type=tel]:focus + label {
+            color: #9c27b0;
+        }
+        .input-field input[type=text]:focus,
+        .input-field input[type=tel]:focus,
+        .input-field input[type=text].valid,
+        .input-field input[type=tel].valid {
+            border-bottom: 1px solid #9c27b0;
+            box-shadow: 0 1px 0 0 #9c27b0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation bar -->
+    <nav>
+        <div class="nav-wrapper purple">
+            <a href="#" class="brand-logo center truncate">QuickHue Config</a>
+        </div>
+    </nav>
+
+    <!-- Header image -->
+    <div class="header-image-container">
+        <div class="header-image"><img src="header_background_1.jpg"></div>
+    </div>
+
+    <!-- Content  -->
+    <div class="container">
+        <div class="row">
+            <div class="col s12 white z-depth-1">
+                <h5>Hue Bridge<br>Configuration Settings</h5>
+                <form class="col s12" id="config_form">
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <i class="mdi-action-settings-ethernet prefix"></i>
+                            <input id="HUE_BRIDGE_IP" name="HUE_BRIDGE_IP" type="tel" class="validate">
+                            <label for="HUE_BRIDGE_IP">Hue Bridge IP</label>
+                        </div>
+                        <div class="input-field col s12">
+                            <i class="mdi-image-wb-incandescent prefix"></i>
+                            <input id="HUE_LIGHT_ID" name="HUE_LIGHT_ID" type="tel" class="validate">
+                            <label for="HUE_LIGHT_ID">Hue Light ID number</label>
+                        </div>
+                        <div class="input-field col s12">
+                            If you have a preferred Hue Bridge username you'd like to use, insert it below (<a href="http://www.developers.meethue.com/documentation/getting-started#step_3">Instructions to manually create a user</a>).<br>
+                            Otherwise, click on the button to register this application into your Hue System.
+                        </div>
+                        <div class="input-field col s12" style="text-align: center">
+                            <a class="waves-effect waves-light btn purple" onclick="HueRegistration()">Register QuickHue</a><p>&nbsp;</p>
+                        </div>
+                        <div class="input-field col s12">
+                            <i class="mdi-action-account-circle prefix"></i>
+                            <input id="HUE_BRIDGE_USER" name="HUE_BRIDGE_USER" type="text" class="validate">
+                            <label id="HUE_BRIDGE_USER_label" for="HUE_BRIDGE_USER">Hue Bridge User</label>
+                        </div>
+                    </div>
+                </form>
+                <div class="row">
+                    <div class="col s12 right-align">
+                        <button class="btn waves-effect waves-light grey" id="cancel_button">Cancel</button>
+                        <button class="btn waves-effect waves-light purple" id="submit_button">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal to register QuickHue into Hue Bridge -->
+    <div id="register_modal" class="modal">
+        <div class="modal-content" style="text-align: center">
+            <h4 >Hue Config</h4>
+            <div id="ip_checking">
+                <p class="red-text text-darken-2">Trying to connect to the Hue Bridge</p>
+                <div class="progress purple lighten-4"><div class="indeterminate purple"></div></div>
+            </div>
+            <p id="ip_correct" class="green-text text-darken-2">Bridge IP correct</p>
+            <p><strong>Please press the button on the Hue Bridge.</strong></p>
+            <p>This application needs to be registered into the Hue Bridge to work.<br>This only has to be done once.</p> 
+            <p id="registered_already" class="green-text text-darken-2">User was already registered</p>
+            <p id="register_ok" class="green-text text-darken-2">Successfully registered</p>
+            <div id="registering">
+                <p class="red-text text-darken-2">Trying to register</p>
+                <div class="progress purple lighten-4"><div class="indeterminate purple"></div></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Done</a>
+        </div>
+    </div>
+
+    <!-- Import jQuery and Materialize JS -->
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.2.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/materialize/0.96.1/js/materialize.min.js"></script>
+
+    <!-- Javascript to submit the settings into the PebbleJS kit -->
+    <script>
+        // Converts all the form data into a JSON string
+        function jsonifyForm() {
+            var jsonForm = JSON.stringify($("#config_form").serializeArray());
+            console.log(jsonForm);
+            return jsonForm;
+        }
+
+        // On page load and listener and fill the form with url data
+        $(document).ready(function() {
+            // Prepare the button click listeners
+            $("#cancel_button").click(function() {
+                console.log("Cancel");
+                document.location = "pebblejs://close";
+            });
+            $("#submit_button").click(function() {
+                console.log("Submit");
+                document.location = "pebblejs://close#" + encodeURIComponent(jsonifyForm());
+            });
+            // Load the pre-filled data from PebbleKit JS
+            if (window.location.search) {
+                var jsonFormData = $.parseJSON(decodeURIComponent(window.location.search.substring(1)));
+                for(key in jsonFormData) {
+                    $("#"+[key]).val(jsonFormData[key]);
+                }
+            }
+            // Initialise materialize modal
+            $(".modal-trigger").leanModal();
+        });
+
+        // Check and register the username inserted in the HUE_BRIDGE_USER field
+        function HueRegistration() {
+            // First check that the Bridge IP has been entered
+            var ip = $("#HUE_BRIDGE_IP").val();
+            if (!ip) {
+                alert("Please insert the HUE bridge IP into the form first.");
+                return;
+            }
+            // Prepare and launch modal
+            $("#ip_checking").show();
+            $("#ip_correct").hide();
+            $("#registering").hide();
+            $("#registered_already").hide();
+            $("#register_ok").hide();
+            $("#register_modal").openModal({in_duration: 0});
+
+            // Check if IP belongs to bridge, freaking materialize needs timeout
+            setTimeout(function() {
+                if (!checkBridgeIpCorrectness(ip)) {
+                    alert("The IP in the form is not the correct Hue Bridge IP.");
+                    $("#register_modal").closeModal();
+                    return;
+                }
+                $("#ip_checking").hide();
+                $("#ip_correct").show();
+                // Check if username is already set in form
+                $("#registering").show();
+                var setSuccessfulUsername = function(newUsername) {
+                    $("#registering").hide();
+                    $("#register_ok").show();
+                    $("#HUE_BRIDGE_USER").val(newUsername);
+                    $("#HUE_BRIDGE_USER_label").addClass("active");
+                }
+                var username = $("#HUE_BRIDGE_USER").val();
+                if (username) {
+                    // Check if user already registered, register if not
+                    if (checkBridgeUserExistance(ip, username)) {
+                        $("#registering").hide();
+                        $("#registered_already").show();
+                    } else {
+                        registerBridgeUser(ip, username, setSuccessfulUsername);
+                    }
+                } else {
+                    registerBridgeUser(ip, null, setSuccessfulUsername);
+                }
+            }, (100));
+        }
+
+        // Synchronous function to check if IP belongs to Hue Bridge
+        function checkBridgeIpCorrectness(ip) {
+            var correctIp = false;
+            $.ajax({
+                url: "http://" + ip + "/api/",
+                async: false,
+            }).done(function(data) { correctIp = true; });
+            return correctIp;
+        }
+
+        // Synchronous function to check if user already exists in Hue Bridge
+        function checkBridgeUserExistance(ip, username) {
+            var userExists = false;
+            $.ajax({
+                url: "http://" + ip + "/api/" + username + "/",
+                async: false
+            }).done(function(data) {
+                if (data.config !== undefined) {
+                    userExists = true;
+                } 
+            });
+            return userExists;
+        }
+
+        // Register a username as part of the QuickHue app into the bridge
+        function registerBridgeUser(ip, username, successCallback) {
+            var processResponse = function(data) {
+                if (data[0].success !== undefined) {
+                    if (typeof(successCallback) === typeof(Function)) {
+                        successCallback(data[0].success.username);
+                    }
+                } else if (data[0].error !== undefined && 
+                          (data[0].error.type == 101)) {
+                    // Waiting for button in bridge to be pressed Recursive call
+                    // for as long as the modal is open
+                    console.log("Press the sync button in the Hue Bridge.");
+                    registerBridgeUser(ip, username, successCallback);
+                }
+            };
+
+            var apiUrl = "http://" + ip + "/api/";
+            //var createUserJsonObj = {"devicetype": "QuickHue"};
+            var createUserJsonObj = '{"devicetype": "QuickHue"}';
+            if (username) {
+                //createUserJsonObj.username = username;
+                createUserJsonObj = '{"devicetype": "QuickHue", "username": "' + username +'"}';
+                $.post(apiUrl, createUserJsonObj, processResponse, "json");
+            } else {
+                $.post(apiUrl, createUserJsonObj, processResponse, "json");
+            }
+        }
+    </script>
+</body>
+</html>
