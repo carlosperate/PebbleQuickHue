@@ -84,6 +84,10 @@
                             <input id="HUE_BRIDGE_IP" name="HUE_BRIDGE_IP" type="tel" class="validate">
                             <label for="HUE_BRIDGE_IP">Hue Bridge IP</label>
                         </div>
+                        <div class="input-field col s12" style="text-align: center">
+                            <a class="waves-effect waves-light btn purple" onclick="useDetectedBridgeIp()">Detect Bridge IP</a>
+                            <p id="detect_status"></p>
+                        </div>
                         <div class="input-field col s12">
                             <i class="mdi-image-wb-incandescent prefix"></i>
                             <input id="HUE_LIGHT_ID" name="HUE_LIGHT_ID" type="tel" class="validate">
@@ -163,6 +167,12 @@
             // Load the pre-filled data from PebbleKit JS
             if (window.location.search) {
                 var jsonFormData = $.parseJSON(decodeURIComponent(window.location.search.substring(1)));
+                // DETECTED_IP is passed by PebbleKit JS but has no matching form field —
+                // stash it for the "Detect Bridge IP" button instead of populating the form.
+                if (jsonFormData.DETECTED_IP !== undefined) {
+                    window.detectedBridgeIp = jsonFormData.DETECTED_IP;
+                    delete jsonFormData.DETECTED_IP;
+                }
                 for(key in jsonFormData) {
                     $("#"+[key]).val(jsonFormData[key]);
                 }
@@ -221,6 +231,20 @@
             });
         }
 
+        // Applies the IP auto-detected by PebbleKit JS (passed via URL on page load)
+        // to the form field. User still has to click "Save" to persist it.
+        function useDetectedBridgeIp() {
+            var $status = $("#detect_status");
+            $status.removeClass("green-text red-text");
+            if (window.detectedBridgeIp) {
+                $("#HUE_BRIDGE_IP").val(window.detectedBridgeIp);
+                $("#HUE_BRIDGE_IP").siblings("label").addClass("active");
+                $status.addClass("green-text").text("Detected: " + window.detectedBridgeIp + " — click Save to confirm.");
+            } else {
+                $status.addClass("red-text").text("No bridge was auto-detected. Enter the IP manually.");
+            }
+        }
+
         // Fetch helper: tries HTTPS first (Bridge fw 1.24+), falls back to HTTP
         function bridgeFetch(ip, path, options) {
             return fetch("https://" + ip + path, options)
@@ -232,7 +256,7 @@
             return bridgeFetch(ip, "/api/", { method: "GET" })
                 .then(function(response) { return response.json(); })
                 .then(function() { return true; })
-                .catch(function() { return false; });
+                .catch(function(err) { console.error("Bridge IP check failed:", err); return false; });
         }
 
         // Returns a Promise<boolean> — true if the username is already registered
@@ -240,7 +264,7 @@
             return bridgeFetch(ip, "/api/" + username + "/", { method: "GET" })
                 .then(function(response) { return response.json(); })
                 .then(function(data) { return data.config !== undefined; })
-                .catch(function() { return false; });
+                .catch(function(err) { console.error("Bridge user check failed:", err); return false; });
         }
 
         // Register a new app user into the bridge (bridge assigns the username)
@@ -265,7 +289,7 @@
                     }
                 }
             })
-            .catch(function(err) { console.log("Registration error:", err); });
+            .catch(function(err) { console.error("Registration error:", err); });
         }
     </script>
 </body>

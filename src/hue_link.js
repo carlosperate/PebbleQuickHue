@@ -27,9 +27,56 @@ Pebble.addEventListener("ready", function(e) {
 * PebbleKit App Configuration functions
 *******************************************************************************/
 Pebble.addEventListener("showConfiguration", function(e) {
-    Pebble.openURL("http://carlosperate.github.io/PebbleQuickHue/config/" +
-                   "index.html?" + encodeURIComponent(JSON.stringify(OPTIONS)));
+    // Run N-UPnP discovery on every config open and pass the result as a separate
+    // param. The saved IP (if any) still populates the form; the detected IP is only
+    // applied when the user clicks the "Detect Bridge IP" button in the config page.
+    // Must be done here (phone-side JS) because the discovery endpoint's CORS policy
+    // blocks all browser origins.
+    discoverBridgeIp(function(detectedIp) {
+        var params = {
+            "HUE_BRIDGE_IP":   OPTIONS.HUE_BRIDGE_IP,
+            "HUE_BRIDGE_USER": OPTIONS.HUE_BRIDGE_USER,
+            "HUE_LIGHT_ID":    OPTIONS.HUE_LIGHT_ID,
+            "DETECTED_IP":     detectedIp || ""
+        };
+        Pebble.openURL("http://carlosperate.github.io/PebbleQuickHue/config/" +
+                       "index.html?" + encodeURIComponent(JSON.stringify(params)));
+    });
 });
+
+/** Queries Signify's discovery service and returns the first bridge's local IP. */
+function discoverBridgeIp(callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "https://discovery.meethue.com/", true);
+    xhr.timeout = 5000;
+    var finished = false;
+    var done = function(ip) {
+        if (finished) return;
+        finished = true;
+        callback(ip);
+    };
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var bridges = JSON.parse(xhr.responseText);
+                if (bridges && bridges.length > 0 && bridges[0].internalipaddress) {
+                    console.log("Discovered Hue Bridge at " + bridges[0].internalipaddress);
+                    done(bridges[0].internalipaddress);
+                    return;
+                }
+                console.log("Discovery returned no bridges.");
+            } catch (err) {
+                console.log("Discovery parse error: " + err);
+            }
+        } else {
+            console.log("Discovery HTTP " + xhr.status);
+        }
+        done(null);
+    };
+    xhr.onerror = function() { console.log("Discovery network error"); done(null); };
+    xhr.ontimeout = function() { console.log("Discovery timed out"); done(null); };
+    xhr.send();
+}
 
 Pebble.addEventListener("webviewclosed", function(e) {
     var setHueIp = null;
