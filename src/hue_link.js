@@ -206,20 +206,32 @@ function messageSendLightBrightness(level) {
 }
 
 /** Send the new Hue Bridge IP and Username to the pebble for app storage */
-var setBridgeDataAttemps = 0;
 function messageSetBridgeData(ip, user, lightId) {
-    // Values will be ignored
+    // Skip empty/falsy values so a partially-filled form save doesn't
+    // overwrite a previously-good stored setting with a blank one (e.g.,
+    // saving before the Register QuickHue flow has filled in the username).
     var dictionary = {};
-    if (ip      !== null) dictionary["KEY_BRIDGE_IP"] = ip;
-    if (user    !== null) dictionary["KEY_BRIDGE_USER"] = user;
-    if (lightId !== null) dictionary["KEY_LIGHT_ID"] = lightId;
+    if (ip)      dictionary["KEY_BRIDGE_IP"]   = ip;
+    if (user)    dictionary["KEY_BRIDGE_USER"] = user;
+    if (lightId) dictionary["KEY_LIGHT_ID"]    = lightId;
+    if (Object.keys(dictionary).length === 0) return;
 
-    // Send the message, if an error occurs try again up to 3 times
-    Pebble.sendAppMessage(dictionary,
-            function(e) { setBridgeDataAttemps = 0; },
+    // Retry up to 3 times on nack. Uses a local counter + closure so the
+    // original ip/user/lightId are resent on retry (the shared reAttemp
+    // helper calls its callback with no args, which would send undefined
+    // values and wipe the stored settings).
+    var attempts = 0;
+    var send = function() {
+        Pebble.sendAppMessage(dictionary,
+            function(e) { /* delivered */ },
             function(e) {
-                reAttemp(e, setBridgeDataAttemps, messageSetBridgeData);
+                attempts++;
+                console.log("Set bridge data failed (attempt " + attempts +
+                            "): " + e.error.message);
+                if (attempts < 3) send();
             });
+    };
+    send();
 }
 
 /**
@@ -256,55 +268,43 @@ function toggleLightState() {
         messageRequestBridgeData("KEY_LIGHT_STATE", 0);
         return;
     }
-    var toggleCallback = function(jsdonStrDataBack) {
-        if (jsdonStrDataBack !== null) {
-            var parsedJson = JSON.parse(jsdonStrDataBack);
-            if ((parsedJson.state !== undefined) &&
-                (parsedJson.state.on !== undefined)) {
-                if (parsedJson.state.on === false) {
-                    turnLightOn();
-                } else {
-                    turnLightOff();
-                }
-            } else {
-                messageSendLightState(-1);
-                console.log("Error in getting light state: " + 
-                            jsdonStrDataBack);
-            }
-
+    const toggleCallback = function(jsonStrDataBack) {
+        if (!jsonStrDataBack) return;
+        const parsedJson = JSON.parse(jsonStrDataBack);
+        if (parsedJson.state && (parsedJson.state.on !== undefined)) {
+            setLightState(!parsedJson.state.on);
+        } else {
+            messageSendLightState(-1);
+            console.log("Error in getting light state: " +  jsonStrDataBack);
         }
     };
     ajaxRequest(getLightUrl(), "GET", null, toggleCallback);
 }
 
-/** If this function is called, bridge data is present, no need to check */
-function turnLightOn() {
-    ajaxRequest(getLightUrl() + "/state", "PUT", "{\"on\": true}",
-                turnLightCallback);
-}
-
-/** If this function is called, bridge data is present, no need to check */
-function turnLightOff() {
-    ajaxRequest(getLightUrl() + "/state", "PUT", "{\"on\": false}",
-                turnLightCallback);
-}
-
 /**
- * This callback checks the successfulness of the operation and sends the state
+ * Sends a request to the Hue Bridge to set the light ON/OFF.
+ *
+ * Callback checks successfulness of the operation and sends the state
  * back to the pebble app.
+ *
+ * If this function has been called, bridge data is present, no need to check 
  */
-function turnLightCallback(jsdonStrDataBack) {
-    if (jsdonStrDataBack !== null) {
-        var parsedJson = JSON.parse(jsdonStrDataBack);
-        var lightKey = "/lights/" + OPTIONS.HUE_LIGHT_ID + "/state/on";
+function setLightState(on_state) {
+    const turnLightCallback = function(jsonStrDataBack) {
+        if (!jsonStrDataBack) return;
+        const parsedJson = JSON.parse(jsonStrDataBack);
+        const lightKey = "/lights/" + OPTIONS.HUE_LIGHT_ID + "/state/on";
         if (parsedJson[0].success !== undefined) {
             messageSendLightState(parsedJson[0].success[lightKey]);
         } else {
             messageSendLightState(-1);
-            console.log("Error in turn light callback: " + 
-                        jsdonStrDataBack);
+            console.log("Error in turn light callback: " + jsonStrDataBack);
         }
-    } 
+    };
+    ajaxRequest(getLightUrl() + "/state",
+                "PUT",
+                "{\"on\": " + on_state + "}",
+                turnLightCallback);
 }
 
 function setLightBrightness(level) {
@@ -312,31 +312,29 @@ function setLightBrightness(level) {
         messageRequestBridgeData("KEY_BRIGHTNESS", level);
         return;
     }
-    var setLightBrightnessCallback = function (jsdonStrDataBack) {
-        if (jsdonStrDataBack !== null) {
-            var parsedJson = JSON.parse(jsdonStrDataBack);
-            if (parsedJson[0].success === undefined) {
-                messageSendLightState(-1);
-                console.log("Error in set brightness callback: " +
-                            jsdonStrDataBack);
-            } // No else, as success does not require futher action
-        } 
+    const setLightBrightnessCallback = function (jsonStrDataBack) {
+        if (!jsonStrDataBack) return;
+        const parsedJson = JSON.parse(jsonStrDataBack);
+        if (parsedJson[0].success === undefined) {
+            messageSendLightState(-1);
+            console.log("Error in set brightness callback: " +
+                        jsonStrDataBack);
+        } // No else, as success does not require further action
     };
     ajaxRequest(getLightUrl() + "/state", "PUT", "{\"bri\": " + level + "}",
                 setLightBrightnessCallback);
 }
 
 function requestLightBrightness() {
-    var requestLightBrightnessCallback = function (jsdonStrDataBack) {
-        if (jsdonStrDataBack !== null) {
-            var parsedJson = JSON.parse(jsdonStrDataBack);
-            if (parsedJson.state.bri !== undefined) {
-                messageSendLightBrightness(parsedJson.state.bri);
-            } else {
-                messageSendLightState(-1);
-                console.log("Error in getting brightness callback: " +
-                            jsdonStrDataBack);
-            }
+    const requestLightBrightnessCallback = function (jsonStrDataBack) {
+        if (!jsonStrDataBack) return;
+        const parsedJson = JSON.parse(jsonStrDataBack);
+        if (parsedJson.state.bri !== undefined) {
+            messageSendLightBrightness(parsedJson.state.bri);
+        } else {
+            messageSendLightState(-1);
+            console.log("Error in getting brightness callback: " +
+                        jsonStrDataBack);
         }
     };
     ajaxRequest(getLightUrl(), "GET", null, requestLightBrightnessCallback);

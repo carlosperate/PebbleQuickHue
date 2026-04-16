@@ -17,9 +17,9 @@
 #define STORAGE_IP_LENGTH       16
 // Saved as 32bit for alignment
 #define STORAGE_LIGHT_LENGTH     4
-// Currently sdk PERSIST_DATA_MAX_LENGTH is 256
-#define STORAGE_USER_LENGTH    (PERSIST_DATA_MAX_LENGTH - STORAGE_IP_LENGTH - \
-                                STORAGE_LIGHT_LENGTH - 4)
+// SDK PERSIST_DATA_MAX_LENGTH is 256, Hue Bridge username is usually 40 chars
+// but we want to future proof it, so we give it 128 chars + 1 terminator
+#define STORAGE_USER_LENGTH    129
 
 
 /*******************************************************************************
@@ -287,43 +287,21 @@ static char * get_stored_bridge_ip() {
  *         username data has never been saved before.
  */
 static char * get_stored_bridge_username() {
-    // Currently PERSIST_DATA_MAX_LENGTH is 256, to future proof use 16bit var
-    int16_t username_len = STORAGE_USER_LENGTH;
-    char *bridge_username = (char *)malloc(sizeof(char) * username_len);
-
+    char *bridge_username = (char *)malloc(sizeof(char) * STORAGE_USER_LENGTH);
     if (bridge_username == NULL) {
-        APP_LOG(APP_LOG_LEVEL_WARNING,
-                "Large mem alloc fail for bridge username, trying smaller...");
-        // Maybe we were being a bit too greedy, try smaller before giving up
-        username_len = 120;
-        bridge_username = (char *)malloc(sizeof(char) * username_len);
-        if (bridge_username == NULL) {
-             APP_LOG(APP_LOG_LEVEL_ERROR,
-                     "Small mem alloc for bridge username also failed.");
-            return NULL;
-        }
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Mem alloc for bridge username failed.");
+        return NULL;
     }
 
     int16_t buffer_len = persist_read_string(KEY_BRIDGE_USER, bridge_username,
-                                             (sizeof(char) * username_len));
+                                             (sizeof(char) * STORAGE_USER_LENGTH));
     if (buffer_len == E_DOES_NOT_EXIST) {
         free(bridge_username);
         APP_LOG(APP_LOG_LEVEL_INFO, "Bridge dev username not found in Pebble");
         return NULL;
     }
 
-    // bridge_username is rather large, so let's reduce it
-    char * bridge_shortname = malloc(sizeof(char) * (buffer_len + 1));
-    if (bridge_shortname == NULL) {
-        // Well, I guess we'll have to keep this large memory block
-        APP_LOG(APP_LOG_LEVEL_WARNING,
-                "Mem alloc fail for short bridge username, keeping large one.");
-        return bridge_username;
-    }
-    strncpy(bridge_shortname, bridge_username, buffer_len);
-    free(bridge_username);
-
-    return bridge_shortname;
+    return bridge_username;
 }
 
 
