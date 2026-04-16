@@ -60,8 +60,8 @@ static void init(void) {
 
     // Open AppMessage
     // TODO: Once AppMessage code is finish determine maximum size required
-    app_message_open(app_message_inbox_size_maximum(),
-                     app_message_outbox_size_maximum());
+    app_message_open(app_message_inbox_size_maximum() / 2,
+                     app_message_outbox_size_maximum() / 2);
 
     // Window
     window = window_create();
@@ -142,6 +142,7 @@ static void window_unload(Window *window) {
 
 static void deinit(void) {
     window_destroy(window);
+    APP_LOG(APP_LOG_LEVEL_INFO, "Deinitialized.");
 }
 
 

@@ -13,6 +13,7 @@
 * Defines
 *******************************************************************************/
 #define LIGHT_ID_ERROR          -1
+// IPs (123.567.901.345) are 15 chars + 1 terminator
 #define STORAGE_IP_LENGTH       16
 // Saved as 32bit for alignment
 #define STORAGE_LIGHT_LENGTH     4
@@ -153,7 +154,7 @@ void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
 }
 
 
-/** Logg a message dropped, but there is not much else we can do. */
+/** Log a dropped message, but there is not much else we can do. */
 void inbox_dropped_callback(AppMessageResult reason, void *context) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped! %s",
             translate_error(reason));
@@ -215,18 +216,15 @@ static char * translate_error(AppMessageResult result) {
 static void store_bridge_ip(const char *cstring) {
     status_t status;
 
-    // Any string > STORAGE_IP_LENGTH (including terminator) will be truncated
     if (strlen(cstring) > (STORAGE_IP_LENGTH - 1)) {
-        char bridge_ip[STORAGE_IP_LENGTH];
-        strncpy(bridge_ip, cstring, (STORAGE_IP_LENGTH - 1));
-        bridge_ip[STORAGE_IP_LENGTH - 1] = '\0';
-        status = persist_write_string(KEY_BRIDGE_IP, bridge_ip);
-    } else {
-        status = persist_write_string(KEY_BRIDGE_IP, cstring);
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Error storing IP too long: %s", cstring);
+        return;
     }
-
-    if (status != S_SUCCESS) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Error trying to store the Bridge IP!");
+    status = persist_write_string(KEY_BRIDGE_IP, cstring);
+    if (status < S_SUCCESS) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Error storing IP %s", cstring);
+    } else {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Storing IP %s", cstring);
     }
 }
 
@@ -234,26 +232,26 @@ static void store_bridge_ip(const char *cstring) {
 static void store_bridge_username(const char *cstring) {
     status_t status;
 
-    // Any string > STORAGE_USER_LENGTH (including terminator) will be truncated
     if (strlen(cstring) > (STORAGE_USER_LENGTH - 1)) {
-        char bridge_user[STORAGE_USER_LENGTH];
-        strncpy(bridge_user, cstring, (STORAGE_USER_LENGTH - 1));
-        bridge_user[STORAGE_USER_LENGTH - 1] = '\0';
-        status = persist_write_string(KEY_BRIDGE_IP, bridge_user);
-    } else {
-        status = persist_write_string(KEY_BRIDGE_USER, cstring);
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Error storing username too long: %s", cstring);
+        return;
     }
-
-    if (status != S_SUCCESS) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Error trying to store Bridge username!");
+    status = persist_write_string(KEY_BRIDGE_USER, cstring);
+    if (status < S_SUCCESS) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Error storing Bridge username: %s", cstring);
+    } else {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Storing Bridge username: %s", cstring);
     }
 }
 
 
 static void store_light_id(const int8_t light_id) {
     status_t status = persist_write_int(KEY_LIGHT_ID, (const int32_t)light_id);
-    if (status != S_SUCCESS) {
-        APP_LOG(APP_LOG_LEVEL_INFO, "Error trying to store the Light ID!");
+    // persist_write_int returns bytes written (4) on success, negative on error.
+    if (status < S_SUCCESS) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Error storing Light ID: %d", light_id);
+    } else {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Storing Light ID: %d", light_id);
     }
 }
 
@@ -265,18 +263,18 @@ static void store_light_id(const int8_t light_id) {
  *         never been saved before.
  */
 static char * get_stored_bridge_ip() {
-    char *bridge_ip = (char *)malloc(sizeof(char) * 16);
+    char *bridge_ip = (char *)malloc(sizeof(char) * STORAGE_IP_LENGTH);
     if (bridge_ip == NULL) {
         // We'll deal with a null pointer in the calling function
         APP_LOG(APP_LOG_LEVEL_ERROR, "Mem alloc failure for bridge IP!");
-    } else {
-        int8_t buffer_len = persist_read_string(KEY_BRIDGE_IP, bridge_ip,
-                                                (sizeof(char) * 16));
-        if (buffer_len == E_DOES_NOT_EXIST) {
-            free(bridge_ip);
-            APP_LOG(APP_LOG_LEVEL_INFO, "Bridge IP not found in Pebble");
-            return NULL;
-        }
+        return NULL;
+    }
+    int8_t buffer_len = persist_read_string(KEY_BRIDGE_IP, bridge_ip,
+                                            (sizeof(char) * STORAGE_IP_LENGTH));
+    if (buffer_len == E_DOES_NOT_EXIST) {
+        free(bridge_ip);
+        APP_LOG(APP_LOG_LEVEL_INFO, "Bridge IP not found in Pebble");
+        return NULL;
     }
     return bridge_ip;
 }
@@ -294,12 +292,14 @@ static char * get_stored_bridge_username() {
     char *bridge_username = (char *)malloc(sizeof(char) * username_len);
 
     if (bridge_username == NULL) {
+        APP_LOG(APP_LOG_LEVEL_WARNING,
+                "Large mem alloc fail for bridge username, trying smaller...");
         // Maybe we were being a bit too greedy, try smaller before giving up
         username_len = 120;
         bridge_username = (char *)malloc(sizeof(char) * username_len);
         if (bridge_username == NULL) {
              APP_LOG(APP_LOG_LEVEL_ERROR,
-                     "Mem alloc failure for bridge username!");
+                     "Small mem alloc for bridge username also failed.");
             return NULL;
         }
     }
@@ -316,6 +316,8 @@ static char * get_stored_bridge_username() {
     char * bridge_shortname = malloc(sizeof(char) * (buffer_len + 1));
     if (bridge_shortname == NULL) {
         // Well, I guess we'll have to keep this large memory block
+        APP_LOG(APP_LOG_LEVEL_WARNING,
+                "Mem alloc fail for short bridge username, keeping large one.");
         return bridge_username;
     }
     strncpy(bridge_shortname, bridge_username, buffer_len);
@@ -419,25 +421,30 @@ void send_bridge_settings() {
     char *username = get_stored_bridge_username();
     int8_t light_id = get_stored_light_id();
 
-    // Only send the data if it was retrieved
-    if ((ip != NULL) && (username != NULL) && (light_id != LIGHT_ID_ERROR)) {
-        //APP_LOG(APP_LOG_LEVEL_INFO, "Ip to send %s", ip);
-        //APP_LOG(APP_LOG_LEVEL_INFO, "User to send %s", username);
-        //APP_LOG(APP_LOG_LEVEL_INFO, "Light ID to send %d", light_id);
-
-        // Prepare dictionary, Add key-value pairs and send it
-        DictionaryIterator *iterator;
-        app_message_outbox_begin(&iterator);
+    // Prepare dictionary, Add key-value pairs and send it
+    DictionaryIterator *iterator;
+    app_message_outbox_begin(&iterator);
+    APP_LOG(APP_LOG_LEVEL_INFO, "Sending bridge settings:");
+    if (ip == NULL) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "IP: NULL", ip);
+    } else {
+        APP_LOG(APP_LOG_LEVEL_INFO, "IP: %s", ip);
         dict_write_cstring(iterator, KEY_BRIDGE_IP, ip);
-        dict_write_cstring(iterator, KEY_BRIDGE_USER, username);
-        dict_write_int8(iterator, KEY_LIGHT_ID, light_id);
-        AppMessageResult result = app_message_outbox_send();
-        if (result != APP_MSG_OK) {
-            APP_LOG(APP_LOG_LEVEL_ERROR, "Bridge settings message error! %s",
-                    translate_error(result));
-        }
+        free(ip);
     }
+    if (username == NULL) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Username: NULL");
+    } else {
+        APP_LOG(APP_LOG_LEVEL_INFO, "Username: %s", username);
+        dict_write_cstring(iterator, KEY_BRIDGE_USER, username);
+        free(username);
+    }
+    dict_write_int8(iterator, KEY_LIGHT_ID, light_id);
+    APP_LOG(APP_LOG_LEVEL_INFO, "Light ID: %d", light_id);
 
-    if (ip       != NULL) free(ip);
-    if (username != NULL) free(username);
+    AppMessageResult result = app_message_outbox_send();
+    if (result != APP_MSG_OK) {
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Bridge settings message error! %s",
+                translate_error(result));
+    }
 }

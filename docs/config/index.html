@@ -155,12 +155,18 @@
             </div>
             <p id="ip_correct" class="green-text text-darken-2">Bridge IP correct</p>
             <p><strong>Please press the button on the Hue Bridge.</strong></p>
-            <p>This application needs to be registered into the Hue Bridge to work.<br>This only has to be done once.</p> 
+            <p>This application needs to be registered into the Hue Bridge to work.<br>This only has to be done once.</p>
             <p id="registered_already" class="green-text text-darken-2">User was already registered</p>
             <p id="register_ok" class="green-text text-darken-2">Successfully registered</p>
             <div id="registering">
                 <p class="red-text text-darken-2">Trying to register</p>
                 <div class="progress purple lighten-4"><div class="indeterminate purple"></div></div>
+            </div>
+            <div id="ip_error_detail" style="text-align: left; font-size: 0.85em;">
+                <p class="red-text text-darken-2"><strong>Could not reach the Hue Bridge.</strong></p>
+                <p>Page origin: <span id="err_origin" style="word-break: break-all;"></span></p>
+                <p>HTTPS attempt: <span id="err_https" style="word-break: break-all;"></span></p>
+                <p>HTTP attempt: <span id="err_http" style="word-break: break-all;"></span></p>
             </div>
         </div>
         <div class="modal-footer">
@@ -202,7 +208,13 @@
                     delete jsonFormData.DETECTED_IP;
                 }
                 for(key in jsonFormData) {
-                    $("#"+[key]).val(jsonFormData[key]);
+                    var $input = $("#" + key);
+                    $input.val(jsonFormData[key]);
+                    // Materialize 0.96.1 doesn't auto-float the label when the value is set
+                    // programmatically; activate it manually so the value isn't hidden.
+                    if (jsonFormData[key]) {
+                        $input.siblings("label").addClass("active");
+                    }
                 }
             }
             // Initialise materialize modal
@@ -223,6 +235,7 @@
             $("#registering").hide();
             $("#registered_already").hide();
             $("#register_ok").hide();
+            $("#ip_error_detail").hide();
             $("#register_modal").openModal({in_duration: 0});
 
             var setSuccessfulUsername = function(newUsername) {
@@ -234,8 +247,17 @@
 
             checkBridgeIpCorrectness(ip).then(function(isCorrect) {
                 if (!isCorrect) {
-                    alert("The IP in the form is not the correct Hue Bridge IP.");
-                    $("#register_modal").closeModal();
+                    // Surface the real failure reason in the modal so it can be diagnosed
+                    // on devices (phone webview) where the JS console isn't accessible.
+                    var fmt = function(e) {
+                        if (!e) return "(no error recorded)";
+                        return (e.name || "Error") + ": " + (e.message || String(e));
+                    };
+                    $("#ip_checking").hide();
+                    $("#err_origin").text(location.origin);
+                    $("#err_https").text(fmt(lastBridgeFetchErrors.https));
+                    $("#err_http").text(fmt(lastBridgeFetchErrors.http));
+                    $("#ip_error_detail").show();
                     return;
                 }
                 $("#ip_checking").hide();
@@ -273,10 +295,23 @@
             }
         }
 
-        // Fetch helper: tries HTTPS first (Bridge fw 1.24+), falls back to HTTP
+        // Tracks the last HTTPS/HTTP failure from bridgeFetch so the UI can show details.
+        var lastBridgeFetchErrors = { https: null, http: null };
+
+        // Fetch helper: tries HTTPS first (Bridge fw 1.24+), falls back to HTTP.
+        // Captures both attempt errors so the caller can surface them for diagnosis.
         function bridgeFetch(ip, path, options) {
+            lastBridgeFetchErrors = { https: null, http: null };
             return fetch("https://" + ip + path, options)
-                .catch(function() { return fetch("http://" + ip + path, options); });
+                .catch(function(httpsErr) {
+                    lastBridgeFetchErrors.https = httpsErr;
+                    console.warn("HTTPS to " + ip + " failed:", httpsErr);
+                    return fetch("http://" + ip + path, options)
+                        .catch(function(httpErr) {
+                            lastBridgeFetchErrors.http = httpErr;
+                            throw httpErr;
+                        });
+                });
         }
 
         // Returns a Promise<boolean> — true if IP points at a Hue Bridge

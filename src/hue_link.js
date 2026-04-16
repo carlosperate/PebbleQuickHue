@@ -13,6 +13,10 @@ var OPTIONS = {
     "HUE_LIGHT_ID": 0      // Conveniently, there is no ID 0 in the Hue system
 };
 
+// URL of the config page, used when the user clicks the "Configure" button
+// in the Pebble app. For dev it can be changed to a local  network URL.
+const CONFIG_URL = "https://carlosperate.github.io/PebbleQuickHue/config/index.html";
+
 
 /*******************************************************************************
 * PebbleKit JS functions
@@ -27,22 +31,56 @@ Pebble.addEventListener("ready", function(e) {
 * PebbleKit App Configuration functions
 *******************************************************************************/
 Pebble.addEventListener("showConfiguration", function(e) {
-    // Run N-UPnP discovery on every config open and pass the result as a separate
-    // param. The saved IP (if any) still populates the form; the detected IP is only
-    // applied when the user clicks the "Detect Bridge IP" button in the config page.
-    // Must be done here (phone-side JS) because the discovery endpoint's CORS policy
-    // blocks all browser origins.
-    discoverBridgeIp(function(detectedIp) {
-        var params = {
-            "HUE_BRIDGE_IP":   OPTIONS.HUE_BRIDGE_IP,
-            "HUE_BRIDGE_USER": OPTIONS.HUE_BRIDGE_USER,
-            "HUE_LIGHT_ID":    OPTIONS.HUE_LIGHT_ID,
-            "DETECTED_IP":     detectedIp || ""
-        };
-        Pebble.openURL("http://carlosperate.github.io/PebbleQuickHue/config/" +
-                       "index.html?" + encodeURIComponent(JSON.stringify(params)));
+    // On a fresh JS runtime (e.g., after phone reboot or JS being reclaimed) the
+    // in-memory OPTIONS is empty and the form would open blank even though the
+    // watch still has the settings persisted. Pull them back from the watch before
+    // opening the URL so the form is pre-filled with the saved values.
+    loadSavedSettings(function() {
+        // Run N-UPnP discovery on every config open and pass the result as a separate
+        // param. The saved IP (if any) still populates the form; the detected IP is only
+        // applied when the user clicks the "Detect Bridge IP" button in the config page.
+        // Must be done here (phone-side JS) because the discovery endpoint's CORS policy
+        // blocks all browser origins.
+        discoverBridgeIp(function(detectedIp) {
+            const params = {
+                "HUE_BRIDGE_IP":   OPTIONS.HUE_BRIDGE_IP,
+                "HUE_BRIDGE_USER": OPTIONS.HUE_BRIDGE_USER,
+                "HUE_LIGHT_ID":    OPTIONS.HUE_LIGHT_ID,
+                "DETECTED_IP":     detectedIp || ""
+            };
+            const fullUrl = CONFIG_URL + "?" + encodeURIComponent(JSON.stringify(params));
+            console.log("Opening URL: " + fullUrl);
+            Pebble.openURL(fullUrl);
+        });
     });
 });
+
+/**
+ * Ensures OPTIONS is populated with the watch's persisted settings before the
+ * callback fires. Requests them via KEY_SETT_REQUEST and polls until the
+ * appmessage listener fills OPTIONS, or falls through after a 3s timeout.
+ */
+function loadSavedSettings(callback) {
+    if (areSettingSet()) {
+        callback();
+        return;
+    }
+    var finished = false;
+    var done = function() {
+        if (finished) return;
+        finished = true;
+        clearInterval(poll);
+        callback();
+    };
+    var poll = setInterval(function() {
+        if (areSettingSet()) done();
+    }, 200);
+    setTimeout(done, 3000);
+    // Reset so prior exhausted retries (from the ready-handler toggle) don't
+    // block us from asking again here.
+    requestBridgeAttemps = 0;
+    messageRequestBridgeData(null, null);
+}
 
 /** Queries Signify's discovery service and returns the first bridge's local IP. */
 function discoverBridgeIp(callback) {
@@ -73,8 +111,14 @@ function discoverBridgeIp(callback) {
         }
         done(null);
     };
-    xhr.onerror = function() { console.log("Discovery network error"); done(null); };
-    xhr.ontimeout = function() { console.log("Discovery timed out"); done(null); };
+    xhr.onerror = function() {
+        console.log("Discovery network error");
+        done(null);
+    };
+    xhr.ontimeout = function() {
+        console.log("Discovery timed out");
+        done(null);
+    };
     xhr.send();
 }
 
