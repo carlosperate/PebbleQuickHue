@@ -13,6 +13,7 @@
         }
         h5 {
             padding: 10px 10px 0px 10px;
+            text-align: center;
         }
         nav .brand-logo {
             font-size: 1.8rem;
@@ -42,6 +43,26 @@
         }
         .container {
             margin-top: -100px;
+            /* Leave room for the fixed action bar + iOS safe area so the last
+               form field is never hidden behind it. */
+            padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+        }
+        /* Fixed action bar. Anchored to the bottom of the viewport so it
+           survives mobile webviews that shift their chrome as the user
+           scrolls. Safe-area padding keeps it clear of the iOS home
+           indicator, and a solid background covers content scrolling
+           underneath. */
+        .action-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            background-color: #eeeeee;
+            border-top: 1px solid #d0d0d0;
+            padding: 10px 15px calc(10px + env(safe-area-inset-bottom, 0px));
+            text-align: right;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.08);
         }
         /* Forms colours */
         .input-field .prefix.active,
@@ -74,10 +95,10 @@
 
     <!-- Content  -->
     <div class="container">
-        <div class="row">
-            <div class="col s12 white z-depth-1">
-                <h5>Hue Bridge<br>Configuration Settings</h5>
-                <form class="col s12" id="config_form">
+        <form id="config_form">
+            <div class="row">
+                <div class="col s12 white z-depth-1">
+                    <h5>Hue Bridge<br>Configuration Settings</h5>
                     <div class="row">
                         <div class="input-field col s12">
                             <i class="mdi-action-settings-ethernet prefix"></i>
@@ -93,6 +114,13 @@
                             <input id="HUE_LIGHT_ID" name="HUE_LIGHT_ID" type="tel" class="validate">
                             <label for="HUE_LIGHT_ID">Hue Light ID number</label>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col s12 white z-depth-1">
+                    <h5>Hue Bridge<br>User Registration</h5>
+                    <div class="row">
                         <div class="input-field col s12">
                             If you have a preferred Hue Bridge username you'd like to use, insert it below (<a href="https://developers.meethue.com/develop/get-started-2/">Instructions to manually create a user</a>).<br>
                             Otherwise, click on the button to register this application into your Hue System.
@@ -106,15 +134,15 @@
                             <label id="HUE_BRIDGE_USER_label" for="HUE_BRIDGE_USER">Hue Bridge User</label>
                         </div>
                     </div>
-                </form>
-                <div class="row">
-                    <div class="col s12 right-align">
-                        <button class="btn waves-effect waves-light grey" id="cancel_button">Cancel</button>
-                        <button class="btn waves-effect waves-light purple" id="submit_button">Save</button>
-                    </div>
                 </div>
             </div>
-        </div>
+        </form>
+    </div>
+
+    <!-- Fixed bottom action bar -->
+    <div class="action-bar">
+        <button class="btn waves-effect waves-light grey" id="cancel_button">Cancel</button>
+        <button class="btn waves-effect waves-light purple" id="submit_button">Save</button>
     </div>
 
     <!-- Modal to register QuickHue into Hue Bridge -->
