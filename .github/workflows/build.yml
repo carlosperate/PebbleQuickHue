@@ -1,0 +1,49 @@
+name: Build & Release
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install pebble-tool
+        run: pip install pebble-tool
+
+      - name: Install Pebble SDK
+        run: pebble sdk install 4.9.148
+
+      - name: Build
+        run: pebble build
+
+      - name: Rename PBW with release tag
+        if: github.event_name == 'release'
+        run: cp build/PebbleQuickHue.pbw "build/PebbleQuickHue-${{ github.event.release.tag_name }}.pbw"
+
+      - name: Upload PBW artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: PebbleQuickHue.pbw
+          path: build/PebbleQuickHue.pbw
+          compression-level: 0
+
+      - name: Upload PBW to GitHub Release
+        if: github.event_name == 'release'
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/PebbleQuickHue-${{ github.event.release.tag_name }}.pbw"
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
