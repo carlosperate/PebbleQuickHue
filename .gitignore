@@ -3,6 +3,12 @@
 ####################
 ignore/
 build/
+docs/Caddyfile
+
+###################
+# Pebble specific #
+###################
+.lock-waf_*
 
 ######################
 # OS generated files #
